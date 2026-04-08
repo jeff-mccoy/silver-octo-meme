@@ -22,6 +22,9 @@ human:
   password: user-2026
   display_name: User
   admin: true
+  # feedback:                           # optional — how agents should deliver feedback to you
+  #   style: direct                     # "direct" | "diplomatic" | "minimal"
+  #   notes: "Prefers specific examples. Fine with blunt delivery. Raise patterns not one-offs."
 
 # Chat room — all agents + human join here automatically
 room:

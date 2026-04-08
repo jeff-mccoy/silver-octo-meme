@@ -238,6 +238,27 @@ async function generate() {
         agent.reflection_instructions,
       );
     }
+
+    // Write human feedback preferences if specified
+    const feedback = config.human.feedback;
+    if (feedback) {
+      const style = feedback.style || "diplomatic";
+      const notes = feedback.notes || "";
+      const humanName = config.human.display_name || config.human.username;
+      let content = `# How to Give Feedback to ${humanName}\n\n`;
+      content += `**Style:** ${style}\n`;
+      if (style === "direct") {
+        content += `Deliver observations plainly without hedging. Be specific, use examples.\n`;
+      } else if (style === "minimal") {
+        content += `Only surface feedback if it's genuinely blocking. Otherwise absorb and adapt.\n`;
+      } else {
+        content += `Frame observations as questions or suggestions. Be constructive.\n`;
+      }
+      if (notes) {
+        content += `\n**Notes:** ${notes}\n`;
+      }
+      fs.writeFileSync(path.join(configDir, "FEEDBACK.md"), content);
+    }
   }
 
   // Create logs directory
