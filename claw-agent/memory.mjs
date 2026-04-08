@@ -1,8 +1,8 @@
 // claw-agent — Memory context loader
 //
-// Reads memory files and soul from disk, formats them for system prompt injection.
-// The agent manages memories via Claude Code's native file tools (Read/Write).
-// This module just loads existing memories into context each turn.
+// Reads markdown memory files and soul from disk, formats them for system
+// prompt injection. The agent manages memories via Claude Code's native
+// file tools (Read/Write) — just plain markdown files, no JSON schema.
 
 import fs from "fs";
 import path from "path";
@@ -16,19 +16,27 @@ fs.mkdirSync(MEMORY_DIR, { recursive: true });
 
 function loadAllMemories() {
   try {
-    return fs
+    const files = fs
       .readdirSync(MEMORY_DIR)
-      .filter((f) => f.endsWith(".json"))
+      .filter((f) => f.endsWith(".md"))
       .map((f) => {
         try {
-          return JSON.parse(
-            fs.readFileSync(path.join(MEMORY_DIR, f), "utf8")
-          );
-        } catch {
+          const content = fs
+            .readFileSync(path.join(MEMORY_DIR, f), "utf8")
+            .trim();
+          if (!content) return null;
+          // Use file mtime for sorting (most recent first)
+          const stat = fs.statSync(path.join(MEMORY_DIR, f));
+          return { file: f, content, mtime: stat.mtimeMs };
+        } catch (err) {
+          console.warn(`[memory] failed to read ${f}: ${err.message}`);
           return null;
         }
       })
       .filter(Boolean);
+    // Most recently modified first
+    files.sort((a, b) => b.mtime - a.mtime);
+    return files;
   } catch {
     return [];
   }
@@ -50,25 +58,11 @@ export function loadContext() {
   // Load memories
   const memories = loadAllMemories();
   if (memories.length > 0) {
-    memories.sort((a, b) =>
-      (b.createdAt || "").localeCompare(a.createdAt || "")
-    );
     const subset = memories.slice(0, MAX_MEMORIES_IN_CONTEXT);
-
-    const grouped = {};
-    for (const m of subset) {
-      if (!grouped[m.subject]) grouped[m.subject] = [];
-      grouped[m.subject].push(m);
-    }
-
-    const lines = [];
-    for (const [subject, mems] of Object.entries(grouped)) {
-      lines.push(`**${subject}:**`);
-      for (const m of mems) {
-        lines.push(`- [${m.category}] ${m.content}`);
-      }
-    }
-    parts.push(`## My Memories\n${lines.join("\n")}`);
+    const lines = subset.map(
+      (m) => `### ${m.file.replace(/\.md$/, "")}\n${m.content}`,
+    );
+    parts.push(`## My Memories\n\n${lines.join("\n\n")}`);
   }
 
   return parts.length > 0 ? "\n\n---\n\n" + parts.join("\n\n") : "";

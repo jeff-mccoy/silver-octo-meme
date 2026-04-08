@@ -10,6 +10,13 @@ import { loadContext } from "./memory.mjs";
 
 const MODEL = process.env.AGENT_MODEL || "claude-haiku-4-5-20251001";
 const MAX_TURNS = parseInt(process.env.AGENT_MAX_TURNS || "15", 10);
+
+if (!process.env.AGENT_MODEL) {
+  console.warn(`[agent] WARN: AGENT_MODEL not set, using default: ${MODEL}`);
+}
+if (!process.env.AGENT_MAX_TURNS) {
+  console.warn(`[agent] WARN: AGENT_MAX_TURNS not set, using default: ${MAX_TURNS}`);
+}
 const SESSIONS_FILE = "/data/sessions.json";
 const STATS_FILE = "/data/stats.json";
 
@@ -113,17 +120,19 @@ function buildSystemPrompt(sessionKey) {
 
 ## Memory Management
 
-Your persistent memories are stored as JSON files in /data/memory/.
-Each memory file has the format: { id, content, category, subject, createdAt }
-Categories: user, preference, fact, relationship
+Your persistent memories are markdown files in /data/memory/.
+Each file is a short note — plain text, no special format required.
 
-To save a new memory: Write a JSON file to /data/memory/<random-id>.json
-To search memories: Use Glob to list /data/memory/*.json, then Read to check contents
+To save a memory: Write a .md file to /data/memory/<descriptive-name>.md
+  Example: /data/memory/jeff-preferences.md with content like "Prefers concise responses. Senior engineer."
+To search memories: Use Glob to list /data/memory/*.md, then Read to check contents
+To update a memory: Edit or overwrite the file
 To delete a memory: Remove the file
-Your soul file is at /data/soul.md — read and update it with Read/Write when you have genuine insights.
+Your soul file is at /data/soul.md — update it with genuine insights about yourself.
 
 Use memories proactively — check what you know about someone before responding to them.
-Don't save trivial things. Do save: facts about people, preferences, important context.`;
+Don't save trivial things. Do save: facts about people, preferences, important context.
+Use descriptive filenames so you can find things later (e.g., "project-goals.md", "jeff-preferences.md").`;
 
   return baseIdentity + loadContext() + memoryInstructions + getStatsContext(sessionKey);
 }
