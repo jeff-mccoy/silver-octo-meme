@@ -57,6 +57,7 @@ async function generate() {
     workspace: a.workspace || [],
     identity: a.identity || null,
     heartbeat_instructions: a.heartbeat_instructions || null,
+    reflection_instructions: a.reflection_instructions || null,
     image: a.image || null,
     env: a.env || {},
   }));
@@ -227,6 +228,14 @@ async function generate() {
       fs.writeFileSync(
         path.join(configDir, "HEARTBEAT.md"),
         agent.heartbeat_instructions,
+      );
+    }
+
+    // Write reflection instructions if specified
+    if (agent.reflection_instructions) {
+      fs.writeFileSync(
+        path.join(configDir, "REFLECTION.md"),
+        agent.reflection_instructions,
       );
     }
   }
