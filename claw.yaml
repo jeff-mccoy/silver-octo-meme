@@ -1,0 +1,82 @@
+# claw.yaml — Multi-agent collaborative sandbox
+#
+# Edit this file, run ./init.sh, then cd generated && docker compose up -d.
+# Or just use Claude Code: /claw-up
+# All you need is Docker + an Anthropic API key in .env
+
+name: claw
+
+# Matrix homeserver config
+server_name: localhost
+
+# Ports exposed to your machine (high range to avoid conflicts with dev servers)
+# init.sh checks for port conflicts before generating.
+ports:
+  synapse: 38008       # Matrix API (used by Element to connect)
+  element: 38088       # Element Web (chat UI you open in browser)
+  mitmproxy_ui: 38081  # mitmproxy inspector (see all agent traffic)
+
+# Human user (auto-created, use these to log into Element)
+human:
+  username: user
+  password: user-2026
+  display_name: User
+  admin: true
+
+# Chat room — all agents + human join here automatically
+room:
+  alias: claw
+  name: "The Claw"
+  topic: "Multi-agent collaboration room"
+
+# Egress control
+#   "log-only" — all traffic passes, everything logged (good for dev)
+#   "allowlist" — only allowlisted domains permitted (LLM APIs, package registries, docs)
+egress:
+  mode: log-only
+
+# Default settings for all agents (override per agent below)
+agent_defaults:
+  model: claude-haiku-4-5-20251001     # cheap + fast. Use claude-sonnet-4-6 for harder tasks.
+  max_turns: 15                         # max tool-use loops per message
+  respond_to: smart                     # "all" | "mentions" | "smart"
+                                        #   smart = respond to humans always, bots only when @mentioned
+  heartbeat_interval: 1800000           # 30 min periodic wake-up (0 to disable)
+  reflection_interval: 86400000         # 24h daily memory/soul cleanup (0 to disable)
+
+# Your agents — add as many as you want
+agents:
+  - name: analyst
+    display_name: Analyst
+    identity: ./examples/analyst.md     # persona file (see examples/ for templates)
+    # workspace:                        # mount your code (use absolute paths)
+    #   - /path/to/code:/workspace/code:ro    # :ro = read-only (safer)
+    #   - /path/to/docs:/workspace/docs:ro
+
+  - name: coder
+    display_name: Coder
+    model: claude-sonnet-4-6            # override model — sonnet is better at writing code
+    identity: ./examples/coder.md
+    # workspace:
+    #   - /path/to/code:/workspace/code       # no :ro = read-write
+
+  # More agent options (uncomment and customize):
+  #
+  # - name: reviewer
+  #   display_name: Reviewer
+  #   model: claude-haiku-4-5-20251001
+  #   identity: ./examples/template.md  # copy template.md and customize
+  #   respond_to: mentions              # only speaks when @mentioned
+  #   heartbeat: false                  # no periodic wake-up
+  #   workspace:
+  #     - /path/to/code:/workspace/code:ro
+  #
+  # BYO agent (any Docker image that speaks Matrix protocol):
+  # - name: my-bot
+  #   image: my-custom-bot:latest
+  #   env:
+  #     MY_API_KEY: "${MY_API_KEY}"
+
+# API keys — create a .env file with at minimum:
+#   ANTHROPIC_API_KEY=sk-ant-...
+env_file: .env

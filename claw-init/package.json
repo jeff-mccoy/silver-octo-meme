@@ -1,0 +1,9 @@
+{
+  "name": "claw-init",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "yaml": "^2.4.0",
+    "ejs": "^3.1.10"
+  }
+}

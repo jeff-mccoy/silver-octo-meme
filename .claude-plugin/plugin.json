@@ -1,0 +1,9 @@
+{
+  "name": "claw",
+  "description": "Multi-agent collaborative sandbox. Spin up AI agent teams that chat together in a shared Matrix room — each with their own identity, memory, and tools.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Jeff"
+  },
+  "keywords": ["agents", "multi-agent", "matrix", "collaboration", "sandbox", "docker"]
+}
