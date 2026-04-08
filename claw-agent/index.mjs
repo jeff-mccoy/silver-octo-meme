@@ -3,6 +3,7 @@
 // Connects to Synapse, listens for messages, runs them through the Claude
 // Agent SDK loop, posts responses back. Configurable via environment variables.
 
+import fs from "fs";
 import {
   MatrixClient,
   SimpleFsStorageProvider,
@@ -64,7 +65,22 @@ try {
 } catch {}
 
 // --- Room history ---
+// Display name cache persists across restarts so agents remember who's who
+const DISPLAY_NAMES_FILE = "/data/display-names.json";
 const displayNameCache = new Map();
+try {
+  const saved = JSON.parse(fs.readFileSync(DISPLAY_NAMES_FILE, "utf8"));
+  for (const [k, v] of Object.entries(saved)) displayNameCache.set(k, v);
+} catch {}
+
+function saveDisplayNames() {
+  try {
+    fs.writeFileSync(
+      DISPLAY_NAMES_FILE,
+      JSON.stringify(Object.fromEntries(displayNameCache), null, 2),
+    );
+  } catch {}
+}
 
 async function getDisplayName(userId) {
   if (displayNameCache.has(userId)) return displayNameCache.get(userId);
@@ -72,6 +88,7 @@ async function getDisplayName(userId) {
     const profile = await client.getUserProfile(userId);
     const name = profile?.displayname || userId;
     displayNameCache.set(userId, name);
+    saveDisplayNames();
     return name;
   } catch {
     return userId;
@@ -128,14 +145,14 @@ function isBotSender(senderId) {
   return BOT_USERS.has(senderLocal);
 }
 
+// Word-boundary regex for name mentions (avoids "coder" matching "coder-style")
+const namePattern = new RegExp(`(?:^|\\W)@?${localpart}(?:$|\\W)`, "i");
+
 function shouldRespond(text, roomMemberCount, senderId) {
   if (RESPOND_TO === "all") return true;
 
-  const lower = text.toLowerCase();
-
-  // Always respond if mentioned by name
-  if (lower.includes(`@${localpart}`) || lower.includes(localpart))
-    return true;
+  // Always respond if mentioned by name (word-boundary match)
+  if (namePattern.test(text)) return true;
 
   if (RESPOND_TO === "mentions") return false;
 

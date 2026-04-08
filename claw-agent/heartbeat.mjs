@@ -11,7 +11,8 @@ const INTERVAL_MS = parseInt(
   process.env.AGENT_HEARTBEAT_INTERVAL || "1800000",
   10,
 ); // 30 min default
-const HEARTBEAT_SESSION = "__heartbeat__";
+const AGENT_NAME = process.env.BOT_DISPLAY_NAME || "Agent";
+const HEARTBEAT_SESSION = `__heartbeat_${AGENT_NAME.toLowerCase()}__`;
 
 let matrixClient = null;
 let targetRoomId = null;
