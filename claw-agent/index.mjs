@@ -10,6 +10,7 @@ import {
   AutojoinRoomsMixin,
 } from "matrix-bot-sdk";
 import { runAgent } from "./agent.mjs";
+import { loadPersonMemory } from "./memory.mjs";
 import { startHeartbeat } from "./heartbeat.mjs";
 import { startReflection } from "./reflection.mjs";
 
@@ -200,6 +201,7 @@ client.on("room.message", async (roomId, event) => {
     await client.setTyping(roomId, true, 60000).catch(() => {});
 
     const roomContext = await fetchRoomContext(roomId);
+    const personContext = loadPersonMemory(senderName);
 
     const response = await runAgent(
       roomId,
@@ -209,6 +211,7 @@ client.on("room.message", async (roomId, event) => {
         client.setTyping(roomId, active, active ? 60000 : 0).catch(() => {});
       },
       roomContext,
+      personContext,
     );
 
     await client.setTyping(roomId, false, 0).catch(() => {});

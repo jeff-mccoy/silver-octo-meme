@@ -40,7 +40,13 @@ Read /data/soul.md (if it exists). Reflect on:
 
 Update /data/soul.md with genuine insights. Keep it concise — a few paragraphs, not an essay. This isn't a diary entry, it's your evolving sense of self.
 
-## Step 3: Review your identity
+## Step 3: Review people files
+Check /data/memory/people/ for your relational memories. For each person you interacted with recently:
+- Update their file with new observations about communication style, expertise, or preferences
+- Create a new file if you interacted with someone who doesn't have one yet
+- Remove outdated observations that no longer apply
+
+## Step 4: Review your identity
 Read /config/IDENTITY.md. Consider whether your actual behavior aligns with it. If there's a gap, note it in your soul — you can't edit IDENTITY.md (it's read-only), but you can adapt your behavior.`;
 
 function buildReflectionPrompt() {
@@ -50,8 +56,14 @@ function buildReflectionPrompt() {
   let instructions = DEFAULT_INSTRUCTIONS;
   try {
     const custom = fs.readFileSync(REFLECTION_PATH, "utf8").trim();
-    if (custom) instructions = custom;
-  } catch {}
+    if (custom) {
+      instructions = custom;
+    } else {
+      console.warn("[reflection] WARN: /config/REFLECTION.md not found or empty, using default prompt");
+    }
+  } catch {
+    console.warn("[reflection] WARN: /config/REFLECTION.md not found, using default prompt");
+  }
 
   return `[Daily reflection — ${now.toISOString()}]
 

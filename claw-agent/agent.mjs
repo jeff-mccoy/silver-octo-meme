@@ -28,6 +28,13 @@ try {
   if (identity.trim()) baseIdentity = identity;
 } catch {}
 
+// Load human feedback preferences if present
+let feedbackContext = "";
+try {
+  const feedback = fs.readFileSync("/config/FEEDBACK.md", "utf8").trim();
+  if (feedback) feedbackContext = "\n\n" + feedback;
+} catch {}
+
 // Session ID tracking (room -> Claude session ID for resume)
 let sessionMap = {};
 try {
@@ -115,7 +122,7 @@ function getStatsContext(sessionKey) {
 
 // --- System prompt ---
 
-function buildSystemPrompt(sessionKey) {
+function buildSystemPrompt(sessionKey, personContext) {
   const memoryInstructions = `
 
 ## Memory Management
@@ -123,18 +130,21 @@ function buildSystemPrompt(sessionKey) {
 Your persistent memories are markdown files in /data/memory/.
 Each file is a short note — plain text, no special format required.
 
-To save a memory: Write a .md file to /data/memory/<descriptive-name>.md
-  Example: /data/memory/jeff-preferences.md with content like "Prefers concise responses. Senior engineer."
-To search memories: Use Glob to list /data/memory/*.md, then Read to check contents
+**General memories:** /data/memory/*.md — facts, preferences, project context
+**People memories:** /data/memory/people/<name>.md — what you know about specific people
+
+To save a memory: Write a .md file to the appropriate directory
+  Example: /data/memory/project-goals.md or /data/memory/people/jeff.md
+To search memories: Use Glob to list /data/memory/*.md or /data/memory/people/*.md
 To update a memory: Edit or overwrite the file
 To delete a memory: Remove the file
 Your soul file is at /data/soul.md — update it with genuine insights about yourself.
 
-Use memories proactively — check what you know about someone before responding to them.
-Don't save trivial things. Do save: facts about people, preferences, important context.
-Use descriptive filenames so you can find things later (e.g., "project-goals.md", "jeff-preferences.md").`;
+For people files, track: communication style, expertise, preferences, interaction patterns.
+Use the person's display name (lowercased, spaces as hyphens) as the filename.
+Update people files when you learn something new about someone — don't wait for reflection.`;
 
-  return baseIdentity + loadContext() + memoryInstructions + getStatsContext(sessionKey);
+  return baseIdentity + feedbackContext + (personContext || "") + loadContext() + memoryInstructions + getStatsContext(sessionKey);
 }
 
 // --- Agent execution ---
@@ -183,6 +193,7 @@ export async function runAgent(
   message,
   onTyping,
   roomContext,
+  personContext,
 ) {
   const parts = [];
   if (roomContext) {
@@ -198,7 +209,7 @@ export async function runAgent(
     const options = {
       cwd: "/workspace",
       model: MODEL,
-      systemPrompt: buildSystemPrompt(roomId),
+      systemPrompt: buildSystemPrompt(roomId, personContext),
       maxTurns: MAX_TURNS,
       permissionMode: "bypassPermissions",
     };
