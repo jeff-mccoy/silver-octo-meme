@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "jeff-mccoy-silver-octo-meme",
+  "description": "Multi-agent collaborative sandbox. Spin up AI agent teams that chat together in a shared Matrix room.",
+  "owner": {
+    "name": "Jeff McCoy"
+  },
+  "plugins": [
+    {
+      "name": "claw",
+      "description": "Multi-agent collaborative sandbox. Spin up AI agent teams that chat together in a shared Matrix room — each with their own identity, memory, and tools.",
+      "category": "development",
+      "source": ".",
+      "homepage": "https://github.com/jeff-mccoy/silver-octo-meme"
+    }
+  ]
+}
