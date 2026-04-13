@@ -8,6 +8,7 @@
 // otherwise uses a sensible default prompt.
 
 import fs from "fs";
+import { marked } from "marked";
 import { runPrompt } from "./agent.mjs";
 
 const INTERVAL_MS = parseInt(
@@ -113,10 +114,14 @@ async function runReflection() {
     if (matrixClient && targetRoomId) {
       // Only post if the summary is substantive
       if (response.length > 100) {
-        await matrixClient.sendText(
-          targetRoomId,
-          `(daily reflection: ${response.slice(0, 500)})`,
-        );
+        const text = `(daily reflection: ${response.slice(0, 500)})`;
+        const html = await marked.parse(text);
+        await matrixClient.sendMessage(targetRoomId, {
+          msgtype: "m.text",
+          body: text,
+          format: "org.matrix.custom.html",
+          formatted_body: html,
+        });
       }
     }
   } catch (err) {

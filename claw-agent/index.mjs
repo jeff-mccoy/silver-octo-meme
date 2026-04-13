@@ -4,6 +4,7 @@
 // Agent SDK loop, posts responses back. Configurable via environment variables.
 
 import fs from "fs";
+import { marked } from "marked";
 import {
   MatrixClient,
   SimpleFsStorageProvider,
@@ -128,6 +129,17 @@ async function fetchRoomContext(roomId) {
   }
 }
 
+// --- Formatted message sending ---
+async function sendFormatted(roomId, text) {
+  const html = await marked.parse(text);
+  await client.sendMessage(roomId, {
+    msgtype: "m.text",
+    body: text,
+    format: "org.matrix.custom.html",
+    formatted_body: html,
+  });
+}
+
 // --- Message handling ---
 const inflight = new Set();
 
@@ -217,7 +229,7 @@ client.on("room.message", async (roomId, event) => {
     await client.setTyping(roomId, false, 0).catch(() => {});
     const MAX_MSG = 4000;
     for (let i = 0; i < response.length; i += MAX_MSG) {
-      await client.sendText(roomId, response.slice(i, i + MAX_MSG));
+      await sendFormatted(roomId, response.slice(i, i + MAX_MSG));
     }
     console.log(`${TAG} -> ${response.length} chars`);
   } catch (err) {

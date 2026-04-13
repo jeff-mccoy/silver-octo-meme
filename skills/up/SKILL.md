@@ -26,13 +26,21 @@ chmod +x ./claw-workspace/init.sh
 
 ## Step 2: Understand what the user wants
 
-If the user specified agents in their prompt (e.g., "with an analyst and a coder on ~/code/myapp"), use those. Otherwise, ask:
+Start by asking **who they are** — their first name and a short username (lowercase, no spaces) for their Matrix account. This becomes the `human:` section in claw.yaml. Don't use generic defaults like "user" — personalize it.
 
-- What agents do you want? (e.g., analyst, coder, reviewer, coordinator)
+If the user specified agents in their prompt (e.g., "with an analyst and a coder on ~/code/myapp"), use those roles. Otherwise, ask what kind of team they want.
+
+For each agent, **suggest a character name and display name** that fits the role — don't just use role labels like "Analyst" or "Coder". Give them personality. Examples:
+- A security analyst named **Sentinel** (`name: sentinel`)
+- A frontend dev named **PixelForge** (`name: pixelforge`)
+- A code reviewer named **Nitpick** (`name: nitpick`)
+- A PM/coordinator named **Morgan** (`name: morgan`)
+
+Present the suggested roster as a table and let the user tweak names before proceeding. Also ask about:
 - What workspace/code should they have access to? (mount paths, read-only vs read-write)
 - What models? (default: haiku for cheap/fast, sonnet for capable, opus for best)
 
-A good starter: 2 agents (analyst + coder) on haiku. Costs a few dollars/day.
+A good starter: 2 agents on haiku. Costs a few dollars/day.
 
 | Model | Speed | Cost | Best for |
 |-------|-------|------|----------|
@@ -74,6 +82,43 @@ Write custom identity files to `./claw-workspace/identities/<name>.md` if the us
 
 For workspace mounts, always use absolute paths. Use `:ro` for read-only (safer) or omit for read-write.
 
+IMPORTANT: Write the COMPLETE claw.yaml in one Write call. Do not write partial files. Use this as a template — replace the ALL_CAPS placeholders:
+
+```yaml
+name: claw
+server_name: localhost
+ports:
+  synapse: SYNAPSE_PORT
+  element: ELEMENT_PORT
+  mitmproxy_ui: MITMPROXY_PORT
+human:
+  username: HUMAN_USERNAME
+  password: HUMAN_PASSWORD
+  display_name: HUMAN_DISPLAY_NAME
+  admin: true
+room:
+  alias: claw
+  name: "The Claw"
+  topic: "Multi-agent collaboration room"
+egress:
+  mode: log-only
+agent_defaults:
+  model: claude-haiku-4-5-20251001
+  max_turns: 15
+  respond_to: smart
+  heartbeat_interval: 1800000
+  reflection_interval: 86400000
+agents:
+  - name: AGENT_NAME
+    display_name: AGENT_DISPLAY_NAME
+    identity: ./identities/AGENT_NAME.md
+    # model: claude-sonnet-4-6          # uncomment to override default
+    # workspace:
+    #   - /absolute/host/path:/workspace/code:ro
+# shared_repo: /absolute/path/to/repo   # mounted to all agents, worktree discipline auto-injected
+env_file: .env
+```
+
 ## Step 6: Generate and start
 
 ```bash
@@ -103,3 +148,9 @@ Tell them:
 - `/claw:down` to tear down
 - `/claw:add-agent` to add more agents
 - Agent data (memory, soul) persists in `./claw-workspace/generated/agent-data/`
+
+## Important notes
+
+- **Never use `docker compose restart` to pick up .env changes.** It doesn't re-read env files. Always use `docker compose up -d` (or `--force-recreate` if the compose file itself hasn't changed).
+- Docker commands run from `./claw-workspace/generated/` (where docker-compose.yml lives).
+- `claw-provision` and `cert-init` exiting with code 0 is normal — they're one-shot init containers.

@@ -90,7 +90,7 @@ services:
   claw-provision:
     build: ../claw-init
     container_name: <%= config.name || 'claw' %>-provision
-    command: ["node", "init.mjs", "provision"]
+    command: ["provision"]
     depends_on:
       synapse:
         condition: service_healthy
@@ -145,6 +145,9 @@ services:
       AGENT_REFLECTION_INTERVAL: "<%= agent.reflection_interval %>"
 
       TZ: "${TZ:-America/Los_Angeles}"
+<% if (sharedRepo) { %>
+      SHARED_REPO: "/workspace/repo"
+<% } %>
 <% for (const [k, v] of Object.entries(agent.env)) { %>
       <%= k %>: "<%= v %>"
 <% } %>
@@ -154,6 +157,9 @@ services:
       - ./agent-config/<%= agent.name %>:/config:ro
       - ./agent-data/<%= agent.name %>:/data
       - ./mitmproxy/certs:/mitmproxy-ca:ro
+<% if (sharedRepo) { %>
+      - <%= sharedRepo %>:/workspace/repo
+<% } %>
 <% for (const ws of agent.workspace) { %>
       - <%= ws %>
 <% } %>

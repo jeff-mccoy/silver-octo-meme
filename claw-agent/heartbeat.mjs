@@ -4,6 +4,7 @@
 // Posts to Matrix only when there's something worth saying.
 
 import fs from "fs";
+import { marked } from "marked";
 import { runPrompt } from "./agent.mjs";
 
 const HEARTBEAT_PATH = "/config/HEARTBEAT.md";
@@ -76,10 +77,14 @@ async function runHeartbeat() {
     if (matrixClient && targetRoomId) {
       const MAX_MSG = 4000;
       for (let i = 0; i < response.length; i += MAX_MSG) {
-        await matrixClient.sendText(
-          targetRoomId,
-          response.slice(i, i + MAX_MSG),
-        );
+        const chunk = response.slice(i, i + MAX_MSG);
+        const html = await marked.parse(chunk);
+        await matrixClient.sendMessage(targetRoomId, {
+          msgtype: "m.text",
+          body: chunk,
+          format: "org.matrix.custom.html",
+          formatted_body: html,
+        });
       }
       console.log(`[heartbeat] posted ${response.length} chars to Matrix`);
     }

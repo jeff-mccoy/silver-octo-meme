@@ -38,6 +38,10 @@ room:
 egress:
   mode: log-only
 
+# Shared git repo — mounted to all agents, with automatic worktree discipline.
+# Agents read from the repo directly but create personal worktrees for any writes.
+# shared_repo: /absolute/path/to/your/repo
+
 # Default settings for all agents (override per agent below)
 agent_defaults:
   model: claude-haiku-4-5-20251001     # cheap + fast. Use claude-sonnet-4-6 for harder tasks.

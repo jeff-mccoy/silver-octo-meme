@@ -122,7 +122,28 @@ function getStatsContext(sessionKey) {
 
 // --- System prompt ---
 
+const SHARED_REPO = process.env.SHARED_REPO || null;
+
 function buildSystemPrompt(sessionKey, personContext) {
+  const worktreeInstructions = SHARED_REPO ? `
+
+## Shared Repository — Worktree Rules
+
+A shared git repo is mounted at ${SHARED_REPO}. **Other agents share this repo — never work on the main branch directly.**
+
+**Before making ANY changes:**
+1. Create your own worktree: \`git -C ${SHARED_REPO} worktree add /data/worktrees/<branch-name> -b <branch-name>\`
+2. Do all your work inside \`/data/worktrees/<branch-name>/\`, never in ${SHARED_REPO} directly
+3. Use a descriptive branch name prefixed with your name, e.g. \`${AGENT_NAME.toLowerCase()}/fix-auth-bug\`
+4. Commit your changes to your branch in the worktree
+5. When done, tell the team in chat what branch has your changes
+
+**Reading is fine** — you can always read files in ${SHARED_REPO} directly. Only use worktrees for writes.
+
+**Cleanup:** When finished with a branch, remove the worktree: \`git -C ${SHARED_REPO} worktree remove /data/worktrees/<branch-name>\`
+
+Your worktrees persist in /data/worktrees/ across restarts.` : "";
+
   const memoryInstructions = `
 
 ## Memory Management
@@ -144,7 +165,7 @@ For people files, track: communication style, expertise, preferences, interactio
 Use the person's display name (lowercased, spaces as hyphens) as the filename.
 Update people files when you learn something new about someone — don't wait for reflection.`;
 
-  return baseIdentity + feedbackContext + (personContext || "") + loadContext() + memoryInstructions + getStatsContext(sessionKey);
+  return baseIdentity + feedbackContext + (personContext || "") + loadContext() + memoryInstructions + worktreeInstructions + getStatsContext(sessionKey);
 }
 
 // --- Agent execution ---

@@ -62,6 +62,8 @@ async function generate() {
     env: a.env || {},
   }));
 
+  const sharedRepo = config.shared_repo || null; // e.g. "/Users/jeff/code/myproject"
+
   const allBotUsernames = agents.map((a) => a.username);
   const serverName = config.server_name || "localhost";
   const ports = {
@@ -124,6 +126,7 @@ async function generate() {
     egressMode,
     envFile,
     secrets,
+    sharedRepo,
     provisionConfig: JSON.stringify(provisionConfig),
   };
 
